@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
 @WebServlet(name = "RestItems", urlPatterns = {"/RestItems"})
 public class RestItems extends HttpServlet {
@@ -36,28 +37,26 @@ public class RestItems extends HttpServlet {
             items.getItemsList().add(new Item(3, "Tercero", 333, Calendar.getInstance().getTime()));
         }
         
-//        response.setContentType("text/html;charset=UTF-8");
         response.setContentType("text/xml;charset=UTF-8");
         PrintWriter out = response.getWriter();
-        try {
-            /* TODO output your page here. You may use following sample code. */
-//            out.println("<!DOCTYPE html>");
-//            out.println("<html>");
-//            out.println("<head>");
-//            out.println("<title>Servlet RestItems</title>");            
-//            out.println("</head>");
-//            out.println("<body>");
-            
+        try {            
+            JAXBContext jaxbContext = JAXBContext.newInstance(Items.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
             switch (tipoPeticion) {
                 case PETICION_GET:
-                    // Convertir a XML el contenido de item
-                    JAXBContext jaxbContext = JAXBContext.newInstance(Items.class);
-                    Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-                    jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+                    // Convertir a XML el contenido de items, generando el resultado en out
                     jaxbMarshaller.marshal(items, out);
                     break;
                 case PETICION_POST:
-                    // Escribir aquí las accciones para peticiones por POST
+                    // Obtener la lista de items que se quieren insertar
+                    Items newItems = (Items) jaxbUnmarshaller.unmarshal(request.getInputStream());
+                    // Recorrer la lista obteniendo cada objeto contenido en ella
+                    for(Item item :  newItems.getItemsList()) {
+                        // Añadir cada objeto a la lista general
+                        items.getItemsList().add(item);
+                    }
                     break;
                 case PETICION_PUT:
                     // Escribir aquí las accciones para peticiones por PUT
@@ -67,12 +66,8 @@ public class RestItems extends HttpServlet {
                     break;
                 default:
                     break;
-            }     
+            }
             
-//            out.println("</body>");
-//            out.println("</html>");
-//        } catch (PropertyException ex) {
-//            Logger.getLogger(RestItems.class.getName()).log(Level.SEVERE, null, ex);
         } catch (JAXBException ex) {
             Logger.getLogger(RestItems.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
